@@ -64,6 +64,11 @@ public class UsuariosController : Controller
         var u = await _context.Usuarios.FindAsync(id);
         if (u != null)
         {
+            if (u.Email.Equals("admin@itesca.edu.mx", StringComparison.OrdinalIgnoreCase) && nuevoRol != "Administrador")
+            {
+                TempData["Error"] = "La cuenta principal de Administrador (admin@itesca.edu.mx) no puede degradarse de rol.";
+                return RedirectToAction(nameof(Index));
+            }
             u.Rol = nuevoRol;
             _context.RegistrarBitacora("Seguridad", "Cambio de rol de usuario",
                 $"Rol de {u.Email} actualizado a {nuevoRol}.", User.Identity?.Name ?? "Administrador");
@@ -80,6 +85,11 @@ public class UsuariosController : Controller
         var u = await _context.Usuarios.FindAsync(id);
         if (u != null)
         {
+            if (u.Email.Equals("admin@itesca.edu.mx", StringComparison.OrdinalIgnoreCase) && u.Activo)
+            {
+                TempData["Error"] = "Por seguridad no se puede desactivar la cuenta principal de Administrador (admin@itesca.edu.mx).";
+                return RedirectToAction(nameof(Index));
+            }
             u.Activo = !u.Activo;
             _context.RegistrarBitacora("Seguridad", u.Activo ? "Usuario activado" : "Usuario desactivado",
                 $"Estado de {u.Email} cambiado a {(u.Activo ? "Activo" : "Inactivo")}.",
