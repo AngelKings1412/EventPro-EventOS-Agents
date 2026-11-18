@@ -1,0 +1,48 @@
+# Build results y binarios
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / .NET / IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Carpetas de herramientas de IA locales
+.claude/
+.cursor/
+.gemini/
+.agents/
+
+# Bases de datos locales temporales
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos comprimidos y carpetas de trabajo local / empaquetado Drive
+*.zip
+Entrega_Final_Drive/
+EventOS-Agents/
+LoginApp/
+Avance1_Definicion_Proyecto_Reporte.pdf
+Documento_Tecnico_EventPro.pdf

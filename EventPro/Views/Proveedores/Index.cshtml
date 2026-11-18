@@ -1,0 +1,174 @@
+@model IEnumerable<EventPro.Models.Proveedor>
+@{
+    ViewData["Title"] = "Proveedores y Contrataciones";
+    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    var contrataciones = ViewBag.Contrataciones as List<EventPro.Models.EventoProveedor> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Proveedores y Contrataciones de Servicios</h1>
+        <p class="text-muted mb-0">Catálogo institucional utilizado tanto por administradores como por el Agente de Presupuesto IA.</p>
+    </div>
+</div>
+
+@if (puedeEditar)
+{
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card p-4 h-100">
+                <h2 class="mb-3"><i class="bi bi-shop text-primary me-1"></i> Nuevo Proveedor en Catálogo</h2>
+                <form asp-action="Create" method="post" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Empresa / Proveedor</label>
+                        <input name="Nombre" class="form-control form-control-sm" placeholder="Ej. Iluminación del Valle" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Servicio</label>
+                        <input name="Servicio" class="form-control form-control-sm" placeholder="Ej. Audio, Catering, Mobiliario" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Contacto</label>
+                        <input name="Contacto" class="form-control form-control-sm" placeholder="Nombre del contacto" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Teléfono</label>
+                        <input name="Telefono" class="form-control form-control-sm" placeholder="644-000-0000" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Tarifa Base ($)</label>
+                        <input name="CostoEstimado" type="number" step="0.01" class="form-control form-control-sm" value="5000" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Calificación (1-5)</label>
+                        <input name="Calificacion" type="number" step="0.1" min="1" max="5" class="form-control form-control-sm" value="4.8" />
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-plus-circle me-1"></i> Agregar al Catálogo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card p-4 h-100">
+                <h2 class="mb-3"><i class="bi bi-file-earmark-check text-success me-1"></i> Asignar / Contratar Proveedor a Evento</h2>
+                <form asp-action="Contratar" method="post" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Evento</label>
+                        <select name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.Eventos" required></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Proveedor</label>
+                        <select name="proveedorId" class="form-select form-select-sm" asp-items="ViewBag.ProveedoresSelect" required></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Costo Pactado (MXN)</label>
+                        <input name="costo" type="number" step="0.01" class="form-control form-control-sm" value="6500" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Fecha de Contratación</label>
+                        <input name="fechaContratacion" type="date" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-check2-circle me-1"></i> Formalizar Contratación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card mb-4">
+    <div class="card-header bg-white py-3">
+        <h2 class="mb-0">Catálogo de Proveedores Verificados</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Proveedor</th>
+                    <th>Servicio</th>
+                    <th>Contacto y Teléfono</th>
+                    <th>Tarifa Base</th>
+                    <th>Calificación</th>
+                    @if (User.IsInRole("Administrador"))
+                    {
+                        <th class="text-end">Eliminar</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td class="fw-bold text-primary">@p.Nombre</td>
+                        <td><span class="badge bg-light text-dark border">@p.Servicio</span></td>
+                        <td><small>@p.Contacto · @p.Telefono</small></td>
+                        <td class="fw-semibold">$@p.CostoEstimado.ToString("N2") MXN</td>
+                        <td><span class="badge bg-warning text-dark">★ @p.Calificacion.ToString("0.0")</span></td>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <td class="text-end">
+                                <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar proveedor?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-white py-3">
+        <h2 class="mb-0">Historial de Contrataciones Activas por Evento</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Evento</th>
+                    <th>Proveedor</th>
+                    <th>Servicio</th>
+                    <th>Costo Pactado</th>
+                    <th>Fecha</th>
+                    @if (puedeEditar)
+                    {
+                        <th class="text-end">Quitar</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ep in contrataciones)
+                {
+                    <tr>
+                        <td class="fw-semibold">@ep.Evento?.Nombre</td>
+                        <td>@ep.Proveedor?.Nombre</td>
+                        <td><small>@ep.Proveedor?.Servicio</small></td>
+                        <td class="fw-bold text-success">$@ep.Costo.ToString("N2") MXN</td>
+                        <td>@ep.FechaContratacion.ToString("dd/MM/yyyy")</td>
+                        @if (puedeEditar)
+                        {
+                            <td class="text-end">
+                                <form asp-action="DeleteContratacion" asp-route-id="@ep.Id" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg"></i></button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

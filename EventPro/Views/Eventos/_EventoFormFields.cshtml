@@ -1,0 +1,77 @@
+@model EventPro.Models.Evento
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-8">
+        <label asp-for="Nombre" class="form-label fw-semibold">Nombre del Evento</label>
+        <input asp-for="Nombre" class="form-control" placeholder="Ej. Congreso Anual de Tecnología" required />
+        <span asp-validation-for="Nombre" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Tipo" class="form-label fw-semibold">Tipo / Categoría</label>
+        <select asp-for="Tipo" class="form-select">
+            <option value="Académico">Académico</option>
+            <option value="Tecnológico">Tecnológico</option>
+            <option value="Cultural">Cultural</option>
+            <option value="Deportivo">Deportivo</option>
+            <option value="Corporativo">Corporativo</option>
+        </select>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <label asp-for="FechaInicio" class="form-label fw-semibold">Fecha de Inicio</label>
+        <input asp-for="FechaInicio" type="date" class="form-control" required />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="FechaFin" class="form-label fw-semibold">Fecha de Fin</label>
+        <input asp-for="FechaFin" type="date" class="form-control" required />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="PresupuestoMaximo" class="form-label fw-semibold">Presupuesto Máximo (MXN)</label>
+        <input asp-for="PresupuestoMaximo" type="number" step="0.01" min="0" class="form-control" required />
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label asp-for="Lugar" class="form-label fw-semibold">Lugar / Sede</label>
+        <input asp-for="Lugar" class="form-control" placeholder="Centro de Convenciones ITESCA" required />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Aforo" class="form-label fw-semibold">Aforo Estimado</label>
+        <input asp-for="Aforo" class="form-control" type="number" min="1" required />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Estado" class="form-label fw-semibold">Estado</label>
+        <select asp-for="Estado" class="form-select">
+            <option value="Borrador">Borrador</option>
+            <option value="Planificado">Planificado</option>
+            <option value="En coordinación">En coordinación</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <label asp-for="ClienteId" class="form-label fw-semibold">Cliente Solicitante</label>
+        <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.ClienteId">
+            <option value="">-- Seleccionar cliente --</option>
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="OrganizadorId" class="form-label fw-semibold">Organizador Responsable</label>
+        <select asp-for="OrganizadorId" class="form-select" asp-items="ViewBag.OrganizadorId">
+            <option value="">-- Seleccionar usuario --</option>
+        </select>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label asp-for="Descripcion" class="form-label fw-semibold">Descripción y Objetivo del Evento</label>
+    <textarea asp-for="Descripcion" rows="3" class="form-control" placeholder="Describe objetivos, alcance o requerimientos clave para que los agentes IA puedan asistirte mejor..."></textarea>
+</div>

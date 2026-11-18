@@ -1,0 +1,330 @@
+@model IEnumerable<EventPro.Models.Comunicado>
+@{
+    ViewData["Title"] = "Comunicación y Difusión";
+    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    var draftAsunto = ViewBag.DraftAsunto as string ?? "";
+    var draftContenido = ViewBag.DraftContenido as string ?? "";
+    var draftCanal = ViewBag.DraftCanal as string ?? "Correo electrónico";
+    var draftDestinatarios = ViewBag.DraftDestinatarios as string ?? "Todos los invitados";
+    var draftTipo = ViewBag.DraftTipo as string ?? "invitacion";
+    var draftTono = ViewBag.DraftTono as string ?? "Institucional y cordial";
+    var draftNotasExtra = ViewBag.DraftNotasExtra as string ?? "";
+    var draftOrigen = ViewBag.DraftOrigen as string ?? "";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-envelope-paper-heart text-primary me-2"></i>Comunicación y Difusión Multicanal</h1>
+        <p class="text-muted mb-0">Estudio de redacción asistido por el Agente de Comunicación IA, plantillas institucionales, listas de destinatarios y bitácora de envíos.</p>
+    </div>
+</div>
+
+<!-- Tarjetas KPI de Difusión -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TOTAL ENVIADOS</span>
+                <div class="ep-stat-value text-primary">@ViewBag.TotalComunicados</div>
+            </div>
+            <div class="ep-stat-icon bg-primary-subtle text-primary"><i class="bi bi-send-check"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">CORREO INSTITUCIONAL</span>
+                <div class="ep-stat-value text-info">@ViewBag.TotalCorreo</div>
+            </div>
+            <div class="ep-stat-icon bg-info-subtle text-info"><i class="bi bi-envelope"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">WHATSAPP / SMS</span>
+                <div class="ep-stat-value text-success">@ViewBag.TotalWhatsAppSms</div>
+            </div>
+            <div class="ep-stat-icon bg-success-subtle text-success"><i class="bi bi-chat-dots"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">CIRCULARES INTERNAS</span>
+                <div class="ep-stat-value">@ViewBag.TotalCirculares</div>
+            </div>
+            <div class="ep-stat-icon bg-light text-dark"><i class="bi bi-megaphone"></i></div>
+        </div>
+    </div>
+</div>
+
+@if (puedeEditar)
+{
+    <!-- Estudio de Redacción en 2 Columnas -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="card p-4 h-100 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0"><i class="bi bi-robot text-primary me-1"></i> Asistente IA &amp; Plantillas</h2>
+                    <span class="badge bg-success text-white">IA Conectada</span>
+                </div>
+
+                <form asp-action="RedactarConIa" method="post" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Evento Objetivo</label>
+                        <select id="iaEventoId" name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.EventosEditor" required></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Propósito</label>
+                        <select id="iaTipoComunicado" name="tipoComunicado" class="form-select form-select-sm">
+                            <option value="invitacion" selected="@(draftTipo == "invitacion")">Invitación Oficial</option>
+                            <option value="recordatorio" selected="@(draftTipo == "recordatorio")">Recordatorio</option>
+                            <option value="agradecimiento" selected="@(draftTipo == "agradecimiento")">Agradecimiento</option>
+                            <option value="aviso" selected="@(draftTipo == "aviso")">Aviso Urgente / Logístico</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Canal de Difusión</label>
+                        <select id="iaCanal" name="canal" class="form-select form-select-sm">
+                            <option value="Correo electrónico" selected="@(draftCanal == "Correo electrónico")">Correo electrónico</option>
+                            <option value="WhatsApp" selected="@(draftCanal == "WhatsApp")">WhatsApp</option>
+                            <option value="SMS" selected="@(draftCanal == "SMS")">SMS</option>
+                            <option value="Circular Interna" selected="@(draftCanal == "Circular Interna")">Circular Interna</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Lista de Destinatarios</label>
+                        <select id="iaDestinatario" name="destinatario" class="form-select form-select-sm">
+                            <option value="Todos los invitados" selected="@(draftDestinatarios == "Todos los invitados")">Todos los invitados</option>
+                            <option value="Solo invitados confirmados" selected="@(draftDestinatarios == "Solo invitados confirmados")">Solo invitados confirmados</option>
+                            <option value="Invitados pendientes de confirmar" selected="@(draftDestinatarios == "Invitados pendientes de confirmar")">Invitados pendientes de confirmar</option>
+                            <option value="Proveedores contratados" selected="@(draftDestinatarios == "Proveedores contratados")">Proveedores contratados</option>
+                            <option value="Comunidad estudiantil y docente del ITESCA" selected="@(draftDestinatarios == "Comunidad estudiantil y docente del ITESCA")">Comunidad general ITESCA</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Tono de Redacción</label>
+                        <select id="iaTono" name="tono" class="form-select form-select-sm">
+                            <option value="Institucional y cordial" selected="@(draftTono == "Institucional y cordial")">Institucional y cordial</option>
+                            <option value="Motivador y juvenil" selected="@(draftTono == "Motivador y juvenil")">Motivador y juvenil</option>
+                            <option value="Ejecutivo y formal" selected="@(draftTono == "Ejecutivo y formal")">Ejecutivo y formal</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Notas o Instrucciones Adicionales (Opcional)</label>
+                        <textarea id="iaNotasExtra" name="notasExtra" rows="2" class="form-control form-control-sm" placeholder="Ej. Incluir que el registro otorga créditos complementarios o código de vestimenta...">@draftNotasExtra</textarea>
+                    </div>
+                    <div class="col-12 d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-dark btn-sm fw-semibold">
+                            <i class="bi bi-magic me-1"></i> Redactar Borrador con Agente IA
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="aplicarPlantillaRapida()">
+                            <i class="bi bi-file-earmark-text me-1"></i> Usar Plantilla Institucional Rápida
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0"><i class="bi bi-send-check text-primary me-1"></i> Vista Previa Editable y Envío</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        @if (!string.IsNullOrEmpty(draftOrigen))
+                        {
+                            <span id="origenBadge" class="badge bg-info text-white">@draftOrigen</span>
+                        }
+                        else
+                        {
+                            <span id="origenBadge" class="badge bg-secondary text-white d-none"></span>
+                        }
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copiarComunicado()">
+                            <i class="bi bi-clipboard"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+
+                <form asp-action="Create" method="post" class="row g-3">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-5">
+                        <label class="form-label small fw-semibold">Evento</label>
+                        <select id="outEventoId" name="EventoId" class="form-select form-select-sm" asp-items="ViewBag.EventosEditor" required></select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Canal</label>
+                        <select id="outCanal" name="Canal" class="form-select form-select-sm">
+                            <option value="Correo electrónico" selected="@(draftCanal == "Correo electrónico")">Correo electrónico</option>
+                            <option value="WhatsApp" selected="@(draftCanal == "WhatsApp")">WhatsApp</option>
+                            <option value="SMS" selected="@(draftCanal == "SMS")">SMS</option>
+                            <option value="Circular Interna" selected="@(draftCanal == "Circular Interna")">Circular Interna</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Destinatarios (RF-09)</label>
+                        <select id="outDestinatarios" name="Destinatarios" class="form-select form-select-sm">
+                            <option value="Todos los invitados" selected="@(draftDestinatarios == "Todos los invitados")">Todos los invitados</option>
+                            <option value="Solo invitados confirmados" selected="@(draftDestinatarios == "Solo invitados confirmados")">Solo invitados confirmados</option>
+                            <option value="Invitados pendientes de confirmar" selected="@(draftDestinatarios == "Invitados pendientes de confirmar")">Invitados pendientes de confirmar</option>
+                            <option value="Proveedores contratados" selected="@(draftDestinatarios == "Proveedores contratados")">Proveedores contratados</option>
+                            <option value="Comunidad estudiantil y docente del ITESCA" selected="@(draftDestinatarios == "Comunidad estudiantil y docente del ITESCA")">Comunidad general ITESCA</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Asunto del Comunicado</label>
+                        <input id="outAsunto" name="Asunto" value="@draftAsunto" class="form-control" placeholder="Ej. Invitación y confirmación de asistencia" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Cuerpo del Mensaje</label>
+                        <textarea id="outContenido" name="Contenido" rows="6" class="form-control" placeholder="Genera con Agente IA, usa una plantilla rápida o redacta tu comunicado..." required>@draftContenido</textarea>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                            <i class="bi bi-send-fill me-1"></i> Enviar y Registrar en Historial
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Barra de Filtros del Historial -->
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.EventosFiltro" onchange="this.form.submit()">
+                <option value="">-- Todos los eventos --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="canal" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- Todos los canales --</option>
+                <option value="Correo electrónico" selected="@(ViewBag.CanalFiltro == "Correo electrónico")">Correo electrónico</option>
+                <option value="WhatsApp" selected="@(ViewBag.CanalFiltro == "WhatsApp")">WhatsApp</option>
+                <option value="SMS" selected="@(ViewBag.CanalFiltro == "SMS")">SMS</option>
+                <option value="Circular Interna" selected="@(ViewBag.CanalFiltro == "Circular Interna")">Circular Interna</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Limpiar filtros</a>
+        </div>
+    </form>
+</div>
+
+<!-- Historial de Comunicados Registrados -->
+<div class="card">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">Historial de Comunicados y Resultados de Envío (@Model.Count())</h2>
+    </div>
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <p class="text-muted text-center py-4 mb-0">No hay comunicados registrados para los filtros seleccionados.</p>
+        }
+        else
+        {
+            @foreach (var c in Model)
+            {
+                <div class="ep-item-row mb-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="ep-subhead text-primary">@c.Asunto</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success text-white">
+                                <i class="bi bi-check2-all me-1"></i> @c.EstadoEnvio
+                            </span>
+                            <small class="text-muted"><i class="bi bi-clock"></i> @c.FechaEnvio.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                    </div>
+                    <div class="small mt-2 mb-2 d-flex flex-wrap gap-1">
+                        <span class="badge bg-secondary text-white">Canal: @c.Canal</span>
+                        <span class="badge bg-info text-white">Audiencia: @c.Destinatarios</span>
+                        <span class="badge bg-light text-dark border">Evento: @c.Evento?.Nombre</span>
+                        <span class="badge bg-light text-dark border">Enviado por: @(c.EnviadoPor?.Nombre ?? "Sistema")</span>
+                    </div>
+                    <p class="mb-2 text-dark" style="white-space: pre-line;">@c.Contenido</p>
+
+                    @if (puedeEditar)
+                    {
+                        <div class="d-flex flex-wrap justify-content-end gap-2 pt-2 border-top">
+                            <a asp-action="Index" asp-route-cargarId="@c.Id" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil-square me-1"></i> Cargar en Editor
+                            </a>
+                            <form asp-action="Reenviar" asp-route-id="@c.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Reenviar Ahora
+                                </button>
+                            </form>
+                            <form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este comunicado del historial?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const eventosMeta = @Html.Raw(ViewBag.EventosMetaJson ?? "[]");
+
+        function aplicarPlantillaRapida() {
+            const evId = parseInt(document.getElementById('iaEventoId').value, 10);
+            const ev = eventosMeta.find(x => x.Id === evId) || eventosMeta[0] || {
+                Nombre: 'Evento ITESCA', Tipo: 'Académico', Fecha: 'Próximamente', Lugar: 'Sede ITESCA', Aforo: 100
+            };
+            const tipo = document.getElementById('iaTipoComunicado').value;
+            const canal = document.getElementById('iaCanal').value;
+            const dest = document.getElementById('iaDestinatario').value;
+            const extra = document.getElementById('iaNotasExtra').value.trim();
+            const notaTexto = extra ? `\n📌 Nota importante: ${extra}\n` : '';
+
+            let asunto = `Invitación: ${ev.Nombre}`;
+            let cuerpo = '';
+
+            if (tipo === 'recordatorio') {
+                asunto = `Recordatorio: ${ev.Nombre} (${ev.Fecha})`;
+                cuerpo = `Estimado(a) (${dest}):\n\nTe recordamos que el evento "${ev.Nombre}" se realizará del ${ev.Fecha} en ${ev.Lugar}.${notaTexto}\nFavor de llegar 15 minutos antes para agilizar tu registro y asignación de mesa.\n\nAtentamente,\nCoordinación de Eventos ITESCA`;
+            } else if (tipo === 'agradecimiento') {
+                asunto = `Agradecimiento: ${ev.Nombre} | ITESCA`;
+                cuerpo = `Estimado(a) (${dest}):\n\nGracias por participar en "${ev.Nombre}" llevado a cabo en ${ev.Lugar}.${notaTexto}\nTu presencia contribuyó al éxito de esta edición.\n\nAtentamente,\nCoordinación de Eventos ITESCA`;
+            } else if (tipo === 'aviso') {
+                asunto = `AVISO IMPORTANTE: ${ev.Nombre}`;
+                cuerpo = `Atención (${dest}):\n\nCompartimos aviso logístico referente al evento "${ev.Nombre}" en ${ev.Lugar} (${ev.Fecha}).${notaTexto}\nAgradecemos tu puntual atención.\n\nAtentamente,\nCoordinación Operativa ITESCA`;
+            } else {
+                asunto = `Invitación Oficial: ${ev.Nombre} | ITESCA`;
+                cuerpo = `Estimado(a) (${dest}):\n\nNos complace invitarte al evento "${ev.Nombre}" (${ev.Tipo}), programado del ${ev.Fecha} en ${ev.Lugar} (Aforo: ${ev.Aforo} lugares).${notaTexto}\nPor favor confirma tu asistencia oportunamente.\n\nAtentamente,\nCoordinación de Eventos ITESCA`;
+            }
+
+            document.getElementById('outEventoId').value = ev.Id;
+            document.getElementById('outCanal').value = canal;
+            document.getElementById('outDestinatarios').value = dest;
+            document.getElementById('outAsunto').value = asunto;
+            document.getElementById('outContenido').value = cuerpo;
+
+            const badge = document.getElementById('origenBadge');
+            badge.textContent = 'Plantilla Institucional Rápida';
+            badge.classList.remove('d-none');
+        }
+
+        async function copiarComunicado() {
+            const asunto = document.getElementById('outAsunto').value;
+            const cuerpo = document.getElementById('outContenido').value;
+            if (!asunto && !cuerpo) return;
+            try {
+                await navigator.clipboard.writeText(`Asunto: ${asunto}\n\n${cuerpo}`);
+                alert('Comunicado copiado al portapapeles.');
+            } catch {
+                alert('Selecciona y copia el texto manualmente.');
+            }
+        }
+    </script>
+}

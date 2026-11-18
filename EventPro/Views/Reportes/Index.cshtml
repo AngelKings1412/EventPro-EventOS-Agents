@@ -1,0 +1,265 @@
+@model EventPro.Models.ViewModels.ReportesViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Reportes y Estadísticas";
+    var labelsEventosJson = JsonSerializer.Serialize(Model.ResumenPorEvento.Select(r => r.Nombre.Length > 26 ? r.Nombre[..26] + "..." : r.Nombre));
+    var dataEstimadoJson = JsonSerializer.Serialize(Model.ResumenPorEvento.Select(r => r.TotalEstimado));
+    var dataRealJson = JsonSerializer.Serialize(Model.ResumenPorEvento.Select(r => r.TotalReal));
+    var dataTechoJson = JsonSerializer.Serialize(Model.ResumenPorEvento.Select(r => r.PresupuestoMaximo));
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2 no-print">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-bar-chart-line-fill text-success me-2"></i>Módulo de Reportes y Estadísticas</h1>
+        <p class="text-muted mb-0">Indicadores financieros, avance operativo, asistencia nominal e intervenciones IA desde SQL Server.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="ExportarCsv" asp-route-eventoId="@Model.EventoIdSeleccionado" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Exportar CSV (Excel)
+        </a>
+        <button type="button" onclick="window.print()" class="btn btn-primary">
+            <i class="bi bi-printer me-1"></i> Imprimir / Guardar PDF
+        </button>
+    </div>
+</div>
+
+<!-- Filtro de Evento -->
+<div class="card p-3 mb-4 no-print">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-auto">
+            <label class="fw-semibold">Filtrar Reporte por Evento:</label>
+        </div>
+        <div class="col-md-6">
+            <select name="eventoId" class="form-select" asp-items="ViewBag.Eventos" onchange="this.form.submit()">
+                <option value="">-- Consolidado Global (Todos los Eventos) --</option>
+            </select>
+        </div>
+        @if (Model.EventoIdSeleccionado.HasValue)
+        {
+            <div class="col-auto">
+                <a asp-action="Index" class="btn btn-outline-secondary">Ver Todos</a>
+            </div>
+        }
+    </form>
+</div>
+
+<!-- KPIs Estadísticos -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TECHO GLOBAL AUTORIZADO</span>
+                <div class="ep-stat-value text-primary">$@Model.TotalPresupuestoMaximo.ToString("N2")</div>
+                <div class="ep-stat-sub">@Model.TotalEventos evento(s) analizado(s)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">GASTO REAL EJECUTADO</span>
+                <div class="ep-stat-value text-success">$@Model.TotalReal.ToString("N2")</div>
+                <div class="ep-stat-sub">Saldo disponible: $@Model.SaldoGlobal.ToString("N2")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">AVANCE DE TAREAS</span>
+                <div class="ep-stat-value text-info">@Model.TareasCompletadas / @Model.TotalTareas</div>
+                <div class="ep-stat-sub">@Model.TareasVencidas tarea(s) vencida(s)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">ASISTENCIA CONFIRMADA</span>
+                <div class="ep-stat-value">@Model.InvitadosConfirmados / @(Model.InvitadosConfirmados + Model.InvitadosPendientes + Model.InvitadosNoAsistira)</div>
+                <div class="ep-stat-sub">Ejecuciones IA auditadas: @Model.TotalIntervencionesIa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficas Chart.js -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h2 class="mb-3">Comparativa Presupuestal (Techo vs Estimado vs Real)</h2>
+            <canvas id="budgetChart" height="190"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-4 h-100">
+            <h2 class="mb-3">Estado de Tareas</h2>
+            <canvas id="tasksChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card p-4 h-100">
+            <h2 class="mb-3">Confirmación de Invitados</h2>
+            <canvas id="guestsChart" height="220"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla 1: Reporte Ejecutivo de Eventos -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3">
+        <h2 class="mb-0">1. Reporte Ejecutivo Financiero y Operativo por Evento</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Evento</th>
+                    <th>Estado</th>
+                    <th>Techo Máximo</th>
+                    <th>Estimado</th>
+                    <th>Real Ejercido</th>
+                    <th>% Uso</th>
+                    <th>Tareas</th>
+                    <th>Invitados Conf.</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.ResumenPorEvento)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-primary">@r.Nombre</div>
+                            <small class="text-muted">@r.Lugar · @r.FechaInicio.ToString("dd/MM/yyyy")</small>
+                        </td>
+                        <td><span class="badge bg-secondary text-white">@r.Estado</span></td>
+                        <td>$@r.PresupuestoMaximo.ToString("N2")</td>
+                        <td>$@r.TotalEstimado.ToString("N2")</td>
+                        <td class="fw-bold">$@r.TotalReal.ToString("N2")</td>
+                        <td>
+                            <span class="badge @(r.PorcentajePresupuesto >= 100 ? "bg-danger text-white" : r.PorcentajePresupuesto >= 80 ? "bg-warning text-dark" : "bg-success text-white")">
+                                @r.PorcentajePresupuesto%
+                            </span>
+                        </td>
+                        <td>@r.TareasCompletadas / @r.TareasTotales</td>
+                        <td>@r.InvitadosConfirmados / @r.InvitadosTotales</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Tabla 2 y Tabla 3 -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3">
+                <h2 class="mb-0">2. Desglose de Rubros y Contrataciones</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Categoría</th>
+                            <th>Concepto</th>
+                            <th>Estimado</th>
+                            <th>Real</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rubro in Model.Rubros)
+                        {
+                            <tr>
+                                <td class="ps-3"><span class="badge bg-light text-dark border">@rubro.Categoria</span></td>
+                                <td class="small">@rubro.Concepto</td>
+                                <td class="small">$@rubro.MontoEstimado.ToString("N2")</td>
+                                <td class="small fw-bold">$@rubro.MontoReal.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3">
+                <h2 class="mb-0">3. Listado Nominal de Asistentes y Confirmación</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Nombre</th>
+                            <th>Mesa</th>
+                            <th>Correo</th>
+                            <th>Confirmación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model.Invitados)
+                        {
+                            <tr>
+                                <td class="ps-3 fw-semibold small">@inv.Nombre</td>
+                                <td class="small">@inv.Mesa</td>
+                                <td class="small text-muted">@inv.Email</td>
+                                <td>
+                                    <span class="badge @(inv.Confirmacion == "Confirmado" ? "bg-success text-white" : inv.Confirmacion == "Pendiente" ? "bg-warning text-dark" : "bg-danger text-white")">
+                                        @inv.Confirmacion
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        const labelsEventos = @Html.Raw(labelsEventosJson);
+        const dataEstimado = @Html.Raw(dataEstimadoJson);
+        const dataReal = @Html.Raw(dataRealJson);
+        const dataTecho = @Html.Raw(dataTechoJson);
+
+        new Chart(document.getElementById('budgetChart'), {
+            type: 'bar',
+            data: {
+                labels: labelsEventos,
+                datasets: [
+                    { label: 'Techo Máximo', data: dataTecho, backgroundColor: 'rgba(29, 78, 216, 0.25)', borderColor: '#1d4ed8', borderWidth: 2 },
+                    { label: 'Estimado', data: dataEstimado, backgroundColor: 'rgba(255, 193, 7, 0.65)' },
+                    { label: 'Real Ejecutado', data: dataReal, backgroundColor: 'rgba(21, 128, 61, 0.8)' }
+                ]
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        new Chart(document.getElementById('tasksChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Completadas', 'En proceso', 'Pendientes', 'Vencidas'],
+                datasets: [{
+                    data: [@Model.TareasCompletadas, @Model.TareasEnProceso, @Model.TareasPendientes, @Model.TareasVencidas],
+                    backgroundColor: ['#15803d', '#0369a1', '#f59e0b', '#b91c1c']
+                }]
+            }
+        });
+
+        new Chart(document.getElementById('guestsChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Confirmados', 'Pendientes', 'No asistirá'],
+                datasets: [{
+                    data: [@Model.InvitadosConfirmados, @Model.InvitadosPendientes, @Model.InvitadosNoAsistira],
+                    backgroundColor: ['#15803d', '#f59e0b', '#b91c1c']
+                }]
+            }
+        });
+    </script>
+}

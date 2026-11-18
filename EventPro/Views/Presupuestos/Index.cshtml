@@ -1,0 +1,196 @@
+@model IEnumerable<EventPro.Models.RubroPresupuesto>
+@{
+    ViewData["Title"] = "Control de Presupuesto";
+    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    decimal techo = ViewBag.TechoAutorizado ?? 0m;
+    decimal real = ViewBag.TotalReal ?? 0m;
+    double pct = ViewBag.PorcentajeTecho ?? 0;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-1">Presupuesto por Rubros y Techo Financiero</h1>
+        <p class="text-muted mb-0">Control de costos estimados vs reales, alertas de límite y Agente de Presupuesto IA.</p>
+    </div>
+    @if (puedeEditar && ViewBag.EventoIdParaIa != null)
+    {
+        <form asp-action="AnalizarConIa" method="post" class="d-flex gap-2 align-items-center">
+            @Html.AntiForgeryToken()
+            <select name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.Eventos"></select>
+            <button type="submit" class="btn btn-dark btn-sm text-nowrap">
+                <i class="bi bi-robot me-1"></i> Analizar y Sugerir Partidas con IA
+            </button>
+        </form>
+    }
+</div>
+
+@if (pct >= 100)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-octagon-fill me-2"></i>
+        <strong>ALERTA CRÍTICA DE SOBRECOSTO (US-05):</strong> Se ha ejercido el <strong>@pct%</strong> ($@real.ToString("N2")) respecto al presupuesto máximo autorizado ($@techo.ToString("N2") MXN).
+    </div>
+}
+else if (pct >= 80)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>ALERTA PREVENTIVA DE PRESUPUESTO (US-05):</strong> Has consumido el <strong>@pct%</strong> ($@real.ToString("N2")) del techo autorizado ($@techo.ToString("N2") MXN).
+    </div>
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TECHO MÁXIMO AUTORIZADO</span>
+                <div class="ep-stat-value">$@techo.ToString("N2")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TOTAL ESTIMADO</span>
+                <div class="ep-stat-value text-primary">$@(((decimal)ViewBag.TotalEstimado).ToString("N2"))</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TOTAL EJECUTADO / REAL</span>
+                <div class="ep-stat-value text-success">$@real.ToString("N2")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">VARIACIÓN (ESTIMADO - REAL)</span>
+                <div class="ep-stat-value @((decimal)ViewBag.Diferencia < 0 ? "text-danger" : "text-info")">$@(((decimal)ViewBag.Diferencia).ToString("N2"))</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de uso presupuestal -->
+<div class="card p-3 mb-4">
+    <div class="d-flex justify-content-between small fw-bold mb-1">
+        <span>Ejecución sobre Techo Presupuestal Autorizado</span>
+        <span>@pct% utilizado ($@real.ToString("N2") / $@techo.ToString("N2"))</span>
+    </div>
+    <div class="progress" style="height: 12px;">
+        <div class="progress-bar @(pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-success")"
+             role="progressbar"
+             style="width: @Math.Min(100, pct).ToString(System.Globalization.CultureInfo.InvariantCulture)%"></div>
+    </div>
+</div>
+
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-auto">
+            <label class="fw-semibold">Filtrar por Evento:</label>
+        </div>
+        <div class="col-md-5">
+            <select name="eventoId" class="form-select" asp-items="ViewBag.Eventos" onchange="this.form.submit()">
+                <option value="">-- Todos los eventos --</option>
+            </select>
+        </div>
+        @if (ViewBag.EventoActual != null)
+        {
+            <div class="col-auto">
+                <span class="badge bg-primary text-white">Viendo: @ViewBag.EventoActual.Nombre</span>
+            </div>
+        }
+    </form>
+</div>
+
+@if (puedeEditar)
+{
+    <div class="card p-4 mb-4">
+        <h2 class="mb-3">Agregar Nuevo Rubro Presupuestal</h2>
+        <form asp-action="Create" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Evento</label>
+                <select name="EventoId" class="form-select" asp-items="ViewBag.Eventos" required></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Categoría</label>
+                <select name="Categoria" class="form-select">
+                    <option value="Audio y Video">Audio y Video</option>
+                    <option value="Alimentos">Alimentos y Catering</option>
+                    <option value="Logística">Logística y Mobiliario</option>
+                    <option value="Publicidad">Publicidad y Materiales</option>
+                    <option value="Invitados">Invitados y Ponentes</option>
+                    <option value="Otros">Otros</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Concepto</label>
+                <input name="Concepto" class="form-control" placeholder="Ej. Renta de equipo de sonido" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Monto Estimado ($)</label>
+                <input name="MontoEstimado" type="number" step="0.01" class="form-control" value="0.00" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Monto Real ($)</label>
+                <input name="MontoReal" type="number" step="0.01" class="form-control" value="0.00" required />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-plus-circle"></i> Registrar Rubro
+                </button>
+            </div>
+        </form>
+    </div>
+}
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Evento</th>
+                    <th>Categoría</th>
+                    <th>Concepto</th>
+                    <th>Estimado</th>
+                    <th>Real</th>
+                    <th>Diferencia</th>
+                    @if (puedeEditar)
+                    {
+                        <th class="text-end">Acciones</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.Evento?.Nombre</td>
+                        <td><span class="badge bg-light text-dark border">@r.Categoria</span></td>
+                        <td>@r.Concepto</td>
+                        <td>$@r.MontoEstimado.ToString("N2")</td>
+                        <td class="fw-bold">$@r.MontoReal.ToString("N2")</td>
+                        <td class="@(r.MontoEstimado - r.MontoReal < 0 ? "text-danger fw-bold" : "text-success")">
+                            $@((r.MontoEstimado - r.MontoReal).ToString("N2"))
+                        </td>
+                        @if (puedeEditar)
+                        {
+                            <td class="text-end">
+                                <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar rubro?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

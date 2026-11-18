@@ -1,0 +1,92 @@
+@model IEnumerable<EventPro.Models.Usuario>
+@{
+    ViewData["Title"] = "Administración de Usuarios";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Administración de Usuarios y Roles</h1>
+        <p class="text-muted mb-0">Sección exclusiva para <strong>Administrador</strong>: alta de cuentas, hash PBKDF2 y control de permisos RBAC.</p>
+    </div>
+</div>
+
+<div class="card p-4 mb-4">
+    <h2 class="mb-3">Registrar Nuevo Usuario</h2>
+    <form asp-action="Create" method="post" class="row g-3">
+        @Html.AntiForgeryToken()
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Nombre Completo</label>
+            <input name="nombre" class="form-control" placeholder="Ej. Ing. Jesús Leal" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Correo Institucional</label>
+            <input name="email" type="email" class="form-control" placeholder="usuario@itesca.edu.mx" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Contraseña Inicial</label>
+            <input name="password" type="password" class="form-control" placeholder="Mínimo 6 caracteres" required />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-semibold">Rol / Perfil</label>
+            <select name="rol" class="form-select">
+                <option value="Planificador">Planificador</option>
+                <option value="Cliente">Cliente</option>
+                <option value="Administrador">Administrador</option>
+            </select>
+        </div>
+        <div class="col-12 text-end">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-person-plus-fill me-1"></i> Crear Usuario
+            </button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol Asignado</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@u.Nombre</td>
+                        <td><code>@u.Email</code></td>
+                        <td>
+                            <form asp-action="CambiarRol" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@u.Id" />
+                                <select name="nuevoRol" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                    <option value="Administrador" selected="@(u.Rol == "Administrador")">Administrador</option>
+                                    <option value="Planificador" selected="@(u.Rol == "Planificador")">Planificador</option>
+                                    <option value="Cliente" selected="@(u.Rol == "Cliente")">Cliente</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td>
+                            <span class="badge @(u.Activo ? "bg-success text-white" : "bg-secondary text-white")">
+                                @(u.Activo ? "Activo" : "Inactivo")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="ToggleActivo" asp-route-id="@u.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm @(u.Activo ? "btn-outline-warning" : "btn-outline-success")">
+                                    @(u.Activo ? "Desactivar" : "Activar")
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

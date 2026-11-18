@@ -1,0 +1,192 @@
+@model EventPro.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Panel Principal";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h1 class="mb-1">Panel de Control General</h1>
+        <p class="text-muted mb-0">Resumen operativo de eventos, presupuesto y orquestación Multi-Agente IA.</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-controller="Agentes" asp-action="Index" class="btn btn-dark">
+            <i class="bi bi-cpu-fill me-1"></i> Consola Multi-Agente IA
+        </a>
+        @if (User.IsInRole("Administrador") || User.IsInRole("Planificador"))
+        {
+            <a asp-controller="Eventos" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Evento
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Indicadores Clave Operativos y de IA -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">Eventos Activos</span>
+                <div class="ep-stat-value text-primary">@Model.EventosActivos</div>
+                <div class="ep-stat-sub">@Model.EventosPorIniciar en próximos 15 días</div>
+            </div>
+            <div class="ep-stat-icon bg-primary-subtle text-primary">
+                <i class="bi bi-calendar-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">Presupuesto Ejecutado</span>
+                <div class="ep-stat-value text-success">$@Model.PresupuestoComprometido.ToString("N2")</div>
+                <div class="ep-stat-sub">@Model.InvitadosConfirmados invitado(s) confirmados</div>
+            </div>
+            <div class="ep-stat-icon bg-success-subtle text-success">
+                <i class="bi bi-cash"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">Intervenciones IA</span>
+                <div class="ep-stat-value text-info">@Model.IntervencionesIa</div>
+                <div class="ep-stat-sub">@Model.DocumentosRag docs en Base RAG</div>
+            </div>
+            <div class="ep-stat-icon bg-info-subtle text-info">
+                <i class="bi bi-cpu"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">Tareas Vencidas</span>
+                <div class="ep-stat-value text-danger">@Model.TareasVencidas</div>
+                <div class="ep-stat-sub">Requieren atención</div>
+            </div>
+            <div class="ep-stat-icon bg-danger-subtle text-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Próximos Eventos -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Próximos Eventos Programados</h2>
+                <a asp-controller="Eventos" asp-action="Index" class="btn btn-outline-primary btn-sm">Ver todos</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Evento</th>
+                            <th>Fechas</th>
+                            <th>Lugar</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ev in Model.ProximosEventos)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@ev.Nombre</div>
+                                    <small class="text-muted">@(ev.Cliente?.Nombre ?? "Sin cliente") · @ev.Tipo</small>
+                                </td>
+                                <td>
+                                    <small>@ev.FechaInicio.ToString("dd/MMM") - @ev.FechaFin.ToString("dd/MMM/yyyy")</small>
+                                </td>
+                                <td><small>@ev.Lugar</small></td>
+                                <td>
+                                    <span class="badge @(ev.Estado == "Planificado" ? "bg-primary text-white" : ev.Estado == "En coordinación" ? "bg-warning text-dark" : "bg-success text-white")">
+                                        @ev.Estado
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3 text-nowrap">
+                                    <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@ev.Id" class="btn btn-sm btn-dark" title="Orquestar IA">
+                                        <i class="bi bi-cpu"></i>
+                                    </a>
+                                    <a asp-controller="Eventos" asp-action="Details" asp-route-id="@ev.Id" class="btn btn-sm btn-outline-secondary" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tareas por Vencer -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Tareas Logísticas Prioritarias</h2>
+                <a asp-controller="Tareas" asp-action="Index" class="btn btn-outline-primary btn-sm">Cronograma</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    @foreach (var t in Model.TareasPorVencer)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-start p-3">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-semibold small">@t.Titulo</div>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar-event"></i> @t.Evento?.Nombre
+                                </small>
+                                <small class="text-muted">
+                                    <i class="bi bi-person"></i> @t.Responsable · Límite: @t.FechaLimite.ToString("dd/MM/yyyy")
+                                </small>
+                            </div>
+                            <span class="badge @(t.Prioridad == "Alta" ? "bg-danger text-white" : "bg-secondary text-white") rounded-pill">
+                                @t.Prioridad
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actividad reciente de los Agentes IA -->
+<div class="card">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h2 class="mb-0"><i class="bi bi-cpu text-info me-2"></i>Últimas Ejecuciones del Orquestador Multi-Agente IA</h2>
+        <a asp-controller="Bitacora" asp-action="Index" asp-route-tipo="Agente" class="btn btn-outline-primary btn-sm">Ver Bitácora IA</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3">Fecha y Hora</th>
+                    <th>Acción Ejecutada</th>
+                    <th>Detalle</th>
+                    <th>Agente</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.UltimasBitacorasIa)
+                {
+                    <tr>
+                        <td class="ps-3 text-nowrap"><small class="text-muted">@b.Fecha.ToString("dd/MM HH:mm")</small></td>
+                        <td class="fw-semibold small">@b.Accion</td>
+                        <td class="small text-muted">@b.Detalle</td>
+                        <td><span class="badge bg-info text-white">@b.Usuario</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

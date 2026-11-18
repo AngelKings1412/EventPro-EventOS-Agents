@@ -1,0 +1,153 @@
+@model IEnumerable<EventPro.Models.Tarea>
+@{
+    ViewData["Title"] = "Cronograma de Tareas";
+    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-1">Tareas y Cronograma</h1>
+        <p class="text-muted mb-0">Seguimiento de actividades logísticas, responsables, fechas límite y asistencia del Agente Planificador IA.</p>
+    </div>
+    @if (puedeEditar && ViewBag.EventoIdActual != null)
+    {
+        <form asp-action="SugerirConIa" method="post" class="d-flex gap-2 align-items-center">
+            @Html.AntiForgeryToken()
+            <select name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.Eventos"></select>
+            <button type="submit" class="btn btn-dark btn-sm text-nowrap">
+                <i class="bi bi-robot me-1"></i> Sugerir Cronograma con Agente Planificador IA
+            </button>
+        </form>
+    }
+</div>
+
+<!-- Filtros -->
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="eventoId" class="form-select" asp-items="ViewBag.Eventos" onchange="this.form.submit()">
+                <option value="">-- Todos los eventos --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="estado" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todos los estados --</option>
+                <option value="Pendiente" selected="@(ViewBag.EstadoActual == "Pendiente")">Pendientes</option>
+                <option value="En proceso" selected="@(ViewBag.EstadoActual == "En proceso")">En proceso</option>
+                <option value="Completada" selected="@(ViewBag.EstadoActual == "Completada")">Completadas</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar filtros</a>
+        </div>
+    </form>
+</div>
+
+@if (puedeEditar)
+{
+    <div class="card p-4 mb-4">
+        <h2 class="mb-3">Programar Nueva Tarea Manual</h2>
+        <form asp-action="Create" method="post" class="row g-3">
+            @Html.AntiForgeryToken()
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Evento</label>
+                <select name="EventoId" class="form-select" asp-items="ViewBag.Eventos" required></select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Título de la Tarea</label>
+                <input name="Titulo" class="form-control" placeholder="Ej. Prueba técnica de sonido" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold">Responsable</label>
+                <input name="Responsable" class="form-control" placeholder="Eduardo Manzanarez" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Fecha Límite</label>
+                <input name="FechaLimite" type="date" class="form-control" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Prioridad</label>
+                <select name="Prioridad" class="form-select">
+                    <option value="Alta">Alta</option>
+                    <option value="Media" selected>Media</option>
+                    <option value="Baja">Baja</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-calendar-plus"></i> Programar Tarea
+                </button>
+            </div>
+        </form>
+    </div>
+}
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Tarea</th>
+                    <th>Evento</th>
+                    <th>Responsable</th>
+                    <th>Fecha Límite</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    @if (puedeEditar)
+                    {
+                        <th class="text-end">Acciones</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@t.Titulo</td>
+                        <td><small>@t.Evento?.Nombre</small></td>
+                        <td>@t.Responsable</td>
+                        <td>
+                            <small class="@(t.FechaLimite < DateTime.Today && t.Estado != "Completada" ? "text-danger fw-bold" : "")">
+                                @t.FechaLimite.ToString("dd/MM/yyyy")
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge @(t.Prioridad == "Alta" ? "bg-danger text-white" : t.Prioridad == "Media" ? "bg-warning text-dark" : "bg-secondary text-white")">
+                                @t.Prioridad
+                            </span>
+                        </td>
+                        <td>
+                            @if (puedeEditar)
+                            {
+                                <form asp-action="CambiarEstado" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@t.Id" />
+                                    <select name="nuevoEstado" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                        <option value="Pendiente" selected="@(t.Estado == "Pendiente")">Pendiente</option>
+                                        <option value="En proceso" selected="@(t.Estado == "En proceso")">En proceso</option>
+                                        <option value="Completada" selected="@(t.Estado == "Completada")">Completada</option>
+                                    </select>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary text-white">@t.Estado</span>
+                            }
+                        </td>
+                        @if (puedeEditar)
+                        {
+                            <td class="text-end">
+                                <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar tarea?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

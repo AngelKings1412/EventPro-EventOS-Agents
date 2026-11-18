@@ -1,0 +1,38 @@
+@model EventPro.Models.Cliente
+@{
+    ViewData["Title"] = "Editar Cliente";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h1 class="mb-3">Editar Cliente</h1>
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div class="mb-3">
+                    <label asp-for="Nombre" class="form-label fw-semibold">Nombre / Dependencia</label>
+                    <input asp-for="Nombre" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Empresa" class="form-label fw-semibold">Empresa / Institución</label>
+                    <input asp-for="Empresa" class="form-control" />
+                </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-semibold">Correo Electrónico</label>
+                        <input asp-for="Email" type="email" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Telefono" class="form-label fw-semibold">Teléfono</label>
+                        <input asp-for="Telefono" class="form-control" />
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-4">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

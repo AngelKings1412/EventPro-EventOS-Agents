@@ -1,0 +1,196 @@
+@model IEnumerable<EventPro.Models.Invitado>
+@{
+    ViewData["Title"] = "Invitados y Confirmaciones";
+    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Registro de Invitados y Confirmaciones</h1>
+        <p class="text-muted mb-0">Control de asistencia, asignación de mesas e importación masiva desde CSV.</p>
+    </div>
+</div>
+
+<!-- Tarjetas resumen -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">CONFIRMADOS</span>
+                <div class="ep-stat-value text-success">@ViewBag.TotalConfirmados</div>
+            </div>
+            <div class="ep-stat-icon bg-success-subtle text-success"><i class="bi bi-check-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">PENDIENTES DE RESPUESTA</span>
+                <div class="ep-stat-value" style="color: #a16207;">@ViewBag.TotalPendientes</div>
+            </div>
+            <div class="ep-stat-icon bg-warning-subtle text-dark"><i class="bi bi-clock"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">NO ASISTIRÁN</span>
+                <div class="ep-stat-value text-danger">@ViewBag.TotalNoAsiste</div>
+            </div>
+            <div class="ep-stat-icon bg-danger-subtle text-danger"><i class="bi bi-x-circle"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="eventoId" class="form-select" asp-items="ViewBag.Eventos" onchange="this.form.submit()">
+                <option value="">-- Todos los eventos --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="confirmacion" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todas las confirmaciones --</option>
+                <option value="Confirmado" selected="@(ViewBag.ConfirmacionActual == "Confirmado")">Confirmado</option>
+                <option value="Pendiente" selected="@(ViewBag.ConfirmacionActual == "Pendiente")">Pendiente</option>
+                <option value="No asistirá" selected="@(ViewBag.ConfirmacionActual == "No asistirá")">No asistirá</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar filtros</a>
+        </div>
+    </form>
+</div>
+
+@if (puedeEditar)
+{
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card p-4 h-100">
+                <h2 class="mb-3"><i class="bi bi-person-plus text-primary me-1"></i> Registrar Invitado Individual</h2>
+                <form asp-action="Create" method="post" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Evento</label>
+                        <select name="EventoId" class="form-select form-select-sm" asp-items="ViewBag.Eventos" required></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Nombre Completo</label>
+                        <input name="Nombre" class="form-control form-control-sm" placeholder="Ej. Ing. Laura Méndez" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Email</label>
+                        <input name="Email" type="email" class="form-control form-control-sm" placeholder="correo@itesca.edu.mx" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Teléfono</label>
+                        <input name="Telefono" class="form-control form-control-sm" placeholder="644-000-0000" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-semibold">Mesa / Zona</label>
+                        <input name="Mesa" class="form-control form-control-sm" placeholder="Presídium" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Estado</label>
+                        <select name="Confirmacion" class="form-select form-select-sm">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Confirmado">Confirmado</option>
+                            <option value="No asistirá">No asistirá</option>
+                        </select>
+                    </div>
+                    <div class="col-12 mt-3 text-end">
+                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                            <i class="bi bi-check-lg me-1"></i> Guardar Invitado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card p-4 h-100">
+                <h2 class="mb-2"><i class="bi bi-filetype-csv text-success me-1"></i> Importación Masiva CSV</h2>
+                <p class="small text-muted mb-2">Formato: <code>Nombre,Email,Telefono,Mesa,Confirmacion</code></p>
+                <form asp-action="ImportarCsv" method="post" enctype="multipart/form-data" class="row g-2">
+                    @Html.AntiForgeryToken()
+                    <div class="col-12">
+                        <select name="eventoId" class="form-select form-select-sm" asp-items="ViewBag.Eventos" required></select>
+                    </div>
+                    <div class="col-12">
+                        <input type="file" name="archivoCsv" accept=".csv,.txt" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-12">
+                        <textarea name="textoCsv" rows="2" class="form-control form-control-sm" placeholder="O pega aquí líneas CSV: Juan Pérez,juan@itesca.edu.mx,6441234567,Mesa 1,Confirmado"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-upload me-1"></i> Importar CSV a SQL Server
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Invitado</th>
+                    <th>Evento</th>
+                    <th>Contacto</th>
+                    <th>Mesa / Zona</th>
+                    <th>Confirmación</th>
+                    @if (puedeEditar)
+                    {
+                        <th class="text-end">Eliminar</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@i.Nombre</td>
+                        <td><small>@i.Evento?.Nombre</small></td>
+                        <td><small>@i.Email · @i.Telefono</small></td>
+                        <td><span class="badge bg-light text-dark border">@i.Mesa</span></td>
+                        <td>
+                            @if (puedeEditar)
+                            {
+                                <form asp-action="CambiarConfirmacion" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@i.Id" />
+                                    <select name="nuevaConfirmacion" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                        <option value="Confirmado" selected="@(i.Confirmacion == "Confirmado")">Confirmado</option>
+                                        <option value="Pendiente" selected="@(i.Confirmacion == "Pendiente")">Pendiente</option>
+                                        <option value="No asistirá" selected="@(i.Confirmacion == "No asistirá")">No asistirá</option>
+                                    </select>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge @(i.Confirmacion == "Confirmado" ? "bg-success text-white" : i.Confirmacion == "Pendiente" ? "bg-warning text-dark" : "bg-danger text-white")">
+                                    @i.Confirmacion
+                                </span>
+                            }
+                        </td>
+                        @if (puedeEditar)
+                        {
+                            <td class="text-end">
+                                <form asp-action="Delete" asp-route-id="@i.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar invitado?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

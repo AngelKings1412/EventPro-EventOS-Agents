@@ -1,0 +1,212 @@
+@model EventPro.Models.Evento
+@{
+    ViewData["Title"] = "Detalle del Evento";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-1">@Model.Nombre</h1>
+        <p class="text-muted mb-0">
+            <span class="badge bg-primary text-white">@Model.Estado</span>
+            · @Model.Lugar · Fechas: @Model.FechaInicio.ToString("dd/MM/yyyy") al @Model.FechaFin.ToString("dd/MM/yyyy")
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@Model.Id" class="btn btn-dark">
+            <i class="bi bi-cpu-fill me-1"></i> Orquestar con Agentes IA
+        </a>
+        <a asp-controller="Reportes" asp-action="Index" asp-route-eventoId="@Model.Id" class="btn btn-outline-success">
+            <i class="bi bi-bar-chart-line me-1"></i> Reporte Ejecutivo
+        </a>
+        @if (User.IsInRole("Administrador") || User.IsInRole("Planificador"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        }
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<!-- Pestañas Organizativas del Evento -->
+<ul class="nav nav-tabs nav-fill mb-4 bg-white rounded-top border" id="eventoTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="gral-tab" data-bs-toggle="tab" data-bs-target="#gral" type="button">
+            <i class="bi bi-info-circle"></i> Datos Generales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="presupuesto-tab" data-bs-toggle="tab" data-bs-target="#presupuesto" type="button">
+            <i class="bi bi-cash-stack"></i> Presupuesto (@Model.RubrosPresupuesto.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="tareas-tab" data-bs-toggle="tab" data-bs-target="#tareas" type="button">
+            <i class="bi bi-check2-square"></i> Tareas (@Model.Tareas.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="invitados-tab" data-bs-toggle="tab" data-bs-target="#invitados" type="button">
+            <i class="bi bi-people"></i> Invitados (@Model.Invitados.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="prov-tab" data-bs-toggle="tab" data-bs-target="#prov" type="button">
+            <i class="bi bi-truck"></i> Proveedores (@Model.EventoProveedores.Count)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="com-tab" data-bs-toggle="tab" data-bs-target="#com" type="button">
+            <i class="bi bi-envelope"></i> Comunicados (@Model.Comunicados.Count)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="eventoTabContent">
+    <div class="tab-pane fade show active" id="gral" role="tabpanel">
+        <div class="card p-4">
+            <h2 class="mb-3">Información General</h2>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="text-muted small">Cliente / Dependencia:</div>
+                    <div class="fw-bold">@(Model.Cliente?.Nombre ?? "No asignado") (@(Model.Cliente?.Empresa))</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-muted small">Organizador Responsable:</div>
+                    <div class="fw-bold">@(Model.Organizador?.Nombre ?? "Sin asignar") (@(Model.Organizador?.Email))</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Aforo Estimado:</div>
+                    <div class="fw-bold">@Model.Aforo asistentes</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Lugar / Sede:</div>
+                    <div class="fw-bold">@Model.Lugar</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Estado Actual:</div>
+                    <div><span class="badge bg-primary text-white">@Model.Estado</span></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Categoría / Tipo:</div>
+                    <div class="fw-bold">@Model.Tipo</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">Presupuesto Máximo Autorizado:</div>
+                    <div class="fw-bold text-success">$@Model.PresupuestoMaximo.ToString("N2") MXN</div>
+                </div>
+                <div class="col-md-12">
+                    <div class="text-muted small">Descripción / Objetivo:</div>
+                    <div class="text-dark">@(string.IsNullOrWhiteSpace(Model.Descripcion) ? "Sin descripción registrada." : Model.Descripcion)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="presupuesto" role="tabpanel">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">Rubros Presupuestales del Evento</h2>
+                <a asp-controller="Presupuestos" asp-action="Index" asp-route-eventoId="@Model.Id" class="btn btn-outline-primary btn-sm">
+                    Ir al Administrador de Presupuesto
+                </a>
+            </div>
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr><th>Concepto</th><th>Categoría</th><th>Monto Estimado</th><th>Monto Real</th><th>Diferencia</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.RubrosPresupuesto)
+                    {
+                        <tr>
+                            <td>@r.Concepto</td>
+                            <td><span class="badge bg-light text-dark border">@r.Categoria</span></td>
+                            <td>$@r.MontoEstimado.ToString("N2")</td>
+                            <td class="fw-bold">$@r.MontoReal.ToString("N2")</td>
+                            <td class="@(r.MontoEstimado - r.MontoReal < 0 ? "text-danger fw-bold" : "text-success")">
+                                $@((r.MontoEstimado - r.MontoReal).ToString("N2"))
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tareas" role="tabpanel">
+        <div class="card p-4">
+            <h2 class="mb-3">Cronograma de Actividades</h2>
+            <ul class="list-group list-group-flush">
+                @foreach (var t in Model.Tareas)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">@t.Titulo</div>
+                            <small class="text-muted">Resp: @t.Responsable · Límite: @t.FechaLimite.ToString("dd/MM/yyyy")</small>
+                        </div>
+                        <span class="badge @(t.Estado == "Completada" ? "bg-success text-white" : "bg-warning text-dark")">@t.Estado</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="invitados" role="tabpanel">
+        <div class="card p-4">
+            <h2 class="mb-3">Lista de Asistencia e Invitados</h2>
+            <table class="table table-hover">
+                <thead><tr><th>Nombre</th><th>Email</th><th>Mesa</th><th>Confirmación</th></tr></thead>
+                <tbody>
+                    @foreach (var i in Model.Invitados)
+                    {
+                        <tr>
+                            <td>@i.Nombre</td>
+                            <td>@i.Email</td>
+                            <td>@i.Mesa</td>
+                            <td><span class="badge bg-info text-white">@i.Confirmacion</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="prov" role="tabpanel">
+        <div class="card p-4">
+            <h2 class="mb-3">Proveedores Contratados</h2>
+            <table class="table table-hover">
+                <thead><tr><th>Proveedor</th><th>Servicio</th><th>Costo Contratado</th><th>Fecha</th></tr></thead>
+                <tbody>
+                    @foreach (var ep in Model.EventoProveedores)
+                    {
+                        <tr>
+                            <td>@ep.Proveedor?.Nombre</td>
+                            <td>@ep.Proveedor?.Servicio</td>
+                            <td class="fw-bold">$@ep.Costo.ToString("N2")</td>
+                            <td>@ep.FechaContratacion.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="com" role="tabpanel">
+        <div class="card p-4">
+            <h2 class="mb-3">Historial de Comunicados Enviados</h2>
+            @foreach (var c in Model.Comunicados)
+            {
+                <div class="ep-item-row mb-3">
+                    <div class="d-flex justify-content-between">
+                        <strong class="text-primary">@c.Asunto</strong>
+                        <small class="text-muted">@c.FechaEnvio.ToString("dd/MM/yyyy HH:mm")</small>
+                    </div>
+                    <p class="mt-2 mb-1" style="white-space: pre-line;">@c.Contenido</p>
+                    <small class="badge bg-secondary text-white">Canal: @c.Canal</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>

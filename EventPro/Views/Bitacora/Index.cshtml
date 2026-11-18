@@ -1,0 +1,96 @@
+@model IEnumerable<EventPro.Models.Bitacora>
+@{
+    ViewData["Title"] = "Bitácora de Auditoría";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+        <h1 class="mb-1"><i class="bi bi-journal-text text-primary me-2"></i>Bitácora Transaccional y de Agentes IA</h1>
+        <p class="text-muted mb-0">Trazabilidad completa de intervenciones de los Agentes IA, consultas RAG y operaciones en SQL Server.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">TOTAL DE REGISTROS</span>
+                <div class="ep-stat-value text-primary">@ViewBag.TotalRegistros</div>
+            </div>
+            <div class="ep-stat-icon bg-primary-subtle text-primary"><i class="bi bi-list-ul"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">INTERVENCIONES DE AGENTES IA</span>
+                <div class="ep-stat-value text-info">@ViewBag.TotalAgentes</div>
+            </div>
+            <div class="ep-stat-icon bg-info-subtle text-info"><i class="bi bi-cpu"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ep-stat-card">
+            <div>
+                <span class="ep-stat-label">OPERACIONES DEL SISTEMA / USUARIOS</span>
+                <div class="ep-stat-value text-success">@ViewBag.TotalOperaciones</div>
+            </div>
+            <div class="ep-stat-icon bg-success-subtle text-success"><i class="bi bi-shield-check"></i></div>
+        </div>
+    </div>
+</div>
+
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <select name="tipo" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Todos los tipos --</option>
+                <option value="Agente" selected="@(ViewBag.TipoActual == "Agente")">Agente IA (Orquestador / Especialistas)</option>
+                <option value="Evento" selected="@(ViewBag.TipoActual == "Evento")">Eventos e Invitados</option>
+                <option value="Presupuesto" selected="@(ViewBag.TipoActual == "Presupuesto")">Presupuesto y Proveedores</option>
+                <option value="Tarea" selected="@(ViewBag.TipoActual == "Tarea")">Tareas y Cronograma</option>
+                <option value="Comunicado" selected="@(ViewBag.TipoActual == "Comunicado")">Comunicados</option>
+                <option value="Seguridad" selected="@(ViewBag.TipoActual == "Seguridad")">Seguridad / Accesos</option>
+                <option value="Sistema" selected="@(ViewBag.TipoActual == "Sistema")">Sistema</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <input name="buscar" value="@ViewBag.BuscarActual" class="form-control" placeholder="Buscar por acción, detalle o responsable..." />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filtrar</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Fecha y Hora</th>
+                    <th>Tipo</th>
+                    <th>Acción</th>
+                    <th>Detalle Auditado</th>
+                    <th>Actor / Agente</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model)
+                {
+                    string badgeClass = b.Tipo == "Agente" ? "bg-info text-white" :
+                                        b.Tipo == "Seguridad" ? "bg-dark text-white" :
+                                        b.Tipo == "Presupuesto" ? "bg-success text-white" : "bg-secondary text-white";
+                    <tr>
+                        <td class="text-nowrap"><small class="text-muted">@b.Fecha.ToString("dd/MM/yyyy HH:mm:ss")</small></td>
+                        <td><span class="badge @badgeClass">@b.Tipo</span></td>
+                        <td class="fw-semibold">@b.Accion</td>
+                        <td><small>@b.Detalle</small></td>
+                        <td><small class="fw-semibold text-primary">@b.Usuario</small></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

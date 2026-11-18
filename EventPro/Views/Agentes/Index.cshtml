@@ -1,0 +1,389 @@
+@model EventPro.Models.ViewModels.AgentesConsoleViewModel
+@{
+    ViewData["Title"] = "Asistente Inteligente de Eventos (IA)";
+    bool puedeEscribir = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    string agenteActivo = (Model.Resultado?.AgenteAsignado ?? Model.Request.AgenteForzado ?? "multi-agente").ToLowerInvariant();
+}
+
+<div class="mb-4">
+    <h1 class="mb-1">
+        <i class="bi bi-stars text-primary me-2"></i>Asistente Inteligente de Eventos (IA)
+    </h1>
+    <p class="text-muted mb-0">
+        Analiza la logística, el presupuesto y los reglamentos del evento para recomendarte acciones listas para aplicar.
+    </p>
+</div>
+
+<!-- Barra de Control Superior Simplificada -->
+<div class="card mb-4">
+    <div class="card-body p-4">
+        <form id="orchestratorForm" asp-action="Orquestar" method="post">
+            @Html.AntiForgeryToken()
+            <input id="agenteForzadoInput" type="hidden" asp-for="Request.AgenteForzado" />
+            <input type="hidden" asp-for="Request.ApiKey" />
+
+            <div class="row g-3 align-items-end mb-3">
+                <div class="col-lg-5">
+                    <label for="eventoSelect" class="form-label small fw-semibold">1. Evento a analizar</label>
+                    <select id="eventoSelect" asp-for="Request.EventoId" class="form-select" asp-items="ViewBag.Eventos" onchange="document.getElementById('orchestratorForm').submit()"></select>
+                </div>
+                <div class="col-lg-7">
+                    <div class="form-label small fw-semibold mb-1">2. ¿Qué deseas revisar con IA?</div>
+                    <div class="ep-agent-bar">
+                        <button type="button" class="ep-agent-btn @(agenteActivo == "multi-agente" || agenteActivo == "auto" ? "active" : "")" onclick="lanzarRapido('multi-agente', 'Realiza una revisión completa de logística, presupuesto, disponibilidad de salón y comunicado oficial.')">
+                            <i class="bi bi-rocket-takeoff"></i><span>Análisis Completo</span>
+                        </button>
+                        <button type="button" class="ep-agent-btn @(agenteActivo == "planificador" ? "active" : "")" onclick="lanzarRapido('planificador', 'Verifica disponibilidad de salón y sugiere tareas escalonadas para el cronograma.')">
+                            <i class="bi bi-calendar2-check"></i><span>Logística y Salón</span>
+                        </button>
+                        <button type="button" class="ep-agent-btn @(agenteActivo == "presupuesto" ? "active" : "")" onclick="lanzarRapido('presupuesto', 'Evalúa salud financiera, alertas de sobrecosto y cotiza proveedores faltantes.')">
+                            <i class="bi bi-cash-coin"></i><span>Presupuesto</span>
+                        </button>
+                        <button type="button" class="ep-agent-btn @(agenteActivo == "comunicacion" ? "active" : "")" onclick="lanzarRapido('comunicacion', 'Redacta la invitación oficial o recordatorio institucional para los asistentes.')">
+                            <i class="bi bi-envelope-paper"></i><span>Invitaciones</span>
+                        </button>
+                        <button type="button" class="ep-agent-btn @(agenteActivo == "rag" ? "active" : "")" onclick="lanzarRapido('rag', 'Consulta políticas de espacios, aforo máximo, protección civil y topes presupuestales en los reglamentos.')">
+                            <i class="bi bi-book-half"></i><span>Reglamentos</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-stretch mb-3">
+                <div class="col-lg-9">
+                    <label for="promptInput" class="form-label visually-hidden">Instrucción para el asistente IA</label>
+                    <input id="promptInput" asp-for="Request.Prompt" type="text" class="form-control" placeholder="O escribe lo que necesitas (ej: revisa si alcanza el presupuesto y redacta una invitación)..." />
+                </div>
+                <div class="col-lg-3 d-grid">
+                    <button type="submit" class="btn btn-primary fw-semibold">
+                        <i class="bi bi-stars me-1"></i> Analizar con IA
+                    </button>
+                </div>
+            </div>
+
+            <details class="ep-details-box">
+                <summary class="ep-details-summary">
+                    <span><i class="bi bi-sliders2 me-2 text-primary"></i>Personalizar formato de invitación o aviso (opcional)</span>
+                    <span class="small text-muted fw-normal">Mostrar / ocultar</span>
+                </summary>
+                <div class="row g-3 mt-2 pt-2">
+                    <div class="col-md-4">
+                        <label for="canalSelect" class="form-label small fw-semibold">Canal de Difusión</label>
+                        <select id="canalSelect" asp-for="Request.Canal" class="form-select form-select-sm">
+                            <option value="Correo electrónico">Correo electrónico</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="SMS">SMS</option>
+                            <option value="Circular Interna">Circular Interna</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tipoComSelect" class="form-label small fw-semibold">Tipo de Comunicado</label>
+                        <select id="tipoComSelect" asp-for="Request.TipoComunicado" class="form-select form-select-sm">
+                            <option value="invitacion">Invitación Oficial</option>
+                            <option value="recordatorio">Recordatorio Urgente</option>
+                            <option value="agradecimiento">Agradecimiento Post-Evento</option>
+                            <option value="aviso">Aviso Urgente / Logístico</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="tonoSelect" class="form-label small fw-semibold">Tono de Redacción</label>
+                        <select id="tonoSelect" asp-for="Request.Tono" class="form-select form-select-sm">
+                            <option value="Institucional y cordial">Institucional y cordial</option>
+                            <option value="Motivador y juvenil">Motivador y juvenil</option>
+                            <option value="Ejecutivo y formal">Ejecutivo y formal</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+        </form>
+    </div>
+</div>
+
+@if (Model.Resultado != null)
+{
+    var res = Model.Resultado;
+    string espacioClase = res.VerificacionEspacio.Nivel == "danger" ? "ep-tile-danger" :
+                          res.VerificacionEspacio.Nivel == "warning" ? "ep-tile-warning" : "ep-tile-success";
+    string presupuestoClase = res.NivelAlertaPresupuestal == "danger" ? "ep-tile-danger" :
+                              res.NivelAlertaPresupuestal == "warning" ? "ep-tile-warning" : "ep-tile-success";
+
+    <div class="row g-4 mb-4">
+        <!-- Columna Izquierda: Diagnóstico Claro -->
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3">
+                    <h2 class="mb-0"><i class="bi bi-clipboard2-check text-primary me-1"></i> Diagnóstico del Orquestador</h2>
+                    <small class="text-muted">Evento analizado: <strong>@res.EventoNombre</strong></small>
+                </div>
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrWhiteSpace(res.AvisoFallback))
+                    {
+                        <div class="alert alert-warning small py-2 mb-3">
+                            <i class="bi bi-info-circle me-1"></i> @res.AvisoFallback
+                        </div>
+                    }
+
+                    <!-- Semáforo en 2 columnas -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="ep-tile @espacioClase">
+                                <div class="ep-subhead mb-1"><i class="bi bi-building-check me-1"></i> Disponibilidad de Espacio</div>
+                                <div class="small">@res.VerificacionEspacio.Mensaje</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="ep-tile @presupuestoClase">
+                                <div class="ep-subhead mb-1"><i class="bi bi-piggy-bank me-1"></i> Estado del Presupuesto</div>
+                                <div class="small">@res.AlertaPresupuestal</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ep-subhead text-primary mb-1">Conclusión del Análisis</div>
+                    <p class="mb-4">@res.RespuestaResumen</p>
+
+                    @if (res.FuentesRag.Any())
+                    {
+                        <div class="ep-kicker-label mb-2">
+                            <i class="bi bi-book me-1"></i> Normativa Recuperada
+                        </div>
+                        @foreach (var rag in res.FuentesRag)
+                        {
+                            <div class="ep-item-row">
+                                <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
+                                    <strong class="small text-dark">@rag.Titulo</strong>
+                                    <span class="badge bg-secondary text-white">@rag.Categoria</span>
+                                </div>
+                                <div class="small text-muted">@rag.Fragmento</div>
+                            </div>
+                        }
+                    }
+
+                    <!-- Detalle técnico bajo demanda -->
+                    <details class="ep-details-box mt-4">
+                        <summary class="ep-details-summary">
+                            <span><i class="bi bi-diagram-3 me-2 text-primary"></i>Ver cómo razonó la IA (Traza de agentes y ciclo operativo)</span>
+                            <span class="small text-muted fw-normal">Ver detalle técnico</span>
+                        </summary>
+                        <div class="pt-3">
+                            <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                                <span class="badge bg-primary text-white">@res.ModoMotor</span>
+                                <span class="badge bg-secondary text-white">@res.LatenciaMs ms</span>
+                                @foreach (var ag in res.AgentesInvolucrados)
+                                {
+                                    <span class="badge bg-dark text-white">
+                                        <i class="bi @ag.Icono me-1"></i> @ag.Nombre
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="ep-subhead mb-1">Traza de Razonamiento del Orquestador</div>
+                            <p class="small text-muted mb-3">@res.RazonamientoOrquestador</p>
+
+                            <div class="ep-kicker-label mb-2">Ciclo Operativo Ejecutado</div>
+                            <div class="d-flex flex-column gap-1">
+                                @foreach (var step in res.CicloAgente)
+                                {
+                                    <div class="ep-item-row py-2">
+                                        <span class="badge bg-primary text-white me-2">@step.Etapa</span>
+                                        <span class="small">@step.Descripcion</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Propuestas Ejecutables -->
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="mb-0"><i class="bi bi-lightning-fill text-warning me-1"></i> Propuestas Ejecutables (@res.AccionesSugeridas.Count)</h2>
+                        <small class="text-muted">Acciones listas para aplicar con un clic</small>
+                    </div>
+                    @if (puedeEscribir && res.AccionesSugeridas.Any())
+                    {
+                        <form asp-action="AplicarTodas" method="post" class="m-0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="propuestasJson" value="@Model.PropuestasJson" />
+                            <input type="hidden" name="eventoId" value="@res.EventoId" />
+                            <button type="submit" class="btn btn-sm btn-success fw-semibold">
+                                <i class="bi bi-check2-all me-1"></i> Aplicar Todas
+                            </button>
+                        </form>
+                    }
+                </div>
+                <div class="card-body p-4">
+                    @if (!puedeEscribir)
+                    {
+                        <div class="alert alert-secondary small">
+                            <i class="bi bi-shield-lock me-1"></i> Tu rol actual (<strong>Cliente</strong>) es de solo consulta. Inicia sesión como Administrador o Planificador para aplicar acciones.
+                        </div>
+                    }
+
+                    @if (!res.AccionesSugeridas.Any())
+                    {
+                        <p class="text-muted text-center py-4 mb-0">No hay propuestas pendientes para esta consulta. Las tareas o partidas recomendadas ya están registradas.</p>
+                    }
+                    else
+                    {
+                        @foreach (var acc in res.AccionesSugeridas)
+                        {
+                            string badgeColor = acc.Tipo == "agregar_tarea" ? "primary" :
+                                                acc.Tipo == "crear_comunicado" ? "info" : "success";
+                            string tipoLegible = acc.Tipo switch
+                            {
+                                "agregar_tarea" => "Tarea logística",
+                                "agregar_rubro" => "Partida presupuestal",
+                                "contratar_proveedor" => "Proveedor recomendado",
+                                "crear_comunicado" => "Comunicado oficial",
+                                _ => "Acción recomendada"
+                            };
+                            <div class="ep-item-row mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-@badgeColor text-white">@acc.AgenteOrigen</span>
+                                    <small class="text-muted fw-semibold">@tipoLegible</small>
+                                </div>
+                                <div class="ep-subhead mb-1">@acc.Titulo</div>
+                                <p class="small text-muted mb-2" style="white-space: pre-line;">@acc.Descripcion</p>
+                                @if (!string.IsNullOrEmpty(acc.FechaLimite) || !string.IsNullOrEmpty(acc.Responsable) || acc.Monto > 0)
+                                {
+                                    <div class="small text-secondary mb-2">
+                                        @if (!string.IsNullOrEmpty(acc.FechaLimite))
+                                        {
+                                            <span class="me-3"><i class="bi bi-calendar me-1"></i>@acc.FechaLimite</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(acc.Responsable))
+                                        {
+                                            <span class="me-3"><i class="bi bi-person me-1"></i>@acc.Responsable</span>
+                                        }
+                                        @if (acc.Monto > 0)
+                                        {
+                                            <span class="fw-bold text-success"><i class="bi bi-cash me-1"></i>$@acc.Monto.ToString("N2") MXN</span>
+                                        }
+                                    </div>
+                                }
+                                @if (puedeEscribir)
+                                {
+                                    string btnTexto = acc.Tipo switch
+                                    {
+                                        "agregar_tarea" => "Insertar tarea en Cronograma",
+                                        "agregar_rubro" => "Registrar rubro en Presupuesto",
+                                        "contratar_proveedor" => "Contratar proveedor en Evento",
+                                        "crear_comunicado" => "Enviar y guardar Comunicado",
+                                        _ => "Aplicar propuesta"
+                                    };
+                                    <form asp-action="AplicarAccion" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="Id" value="@acc.Id" />
+                                        <input type="hidden" name="Tipo" value="@acc.Tipo" />
+                                        <input type="hidden" name="EventoId" value="@acc.EventoId" />
+                                        <input type="hidden" name="Titulo" value="@acc.Titulo" />
+                                        <input type="hidden" name="Descripcion" value="@acc.Descripcion" />
+                                        <input type="hidden" name="Categoria" value="@acc.Categoria" />
+                                        <input type="hidden" name="Responsable" value="@acc.Responsable" />
+                                        <input type="hidden" name="FechaLimite" value="@acc.FechaLimite" />
+                                        <input type="hidden" name="Prioridad" value="@acc.Prioridad" />
+                                        <input type="hidden" name="Monto" value="@acc.Monto" />
+                                        <input type="hidden" name="ProveedorId" value="@acc.ProveedorId" />
+                                        <input type="hidden" name="ProveedorNombre" value="@acc.ProveedorNombre" />
+                                        <input type="hidden" name="Canal" value="@acc.Canal" />
+                                        <input type="hidden" name="returnPrompt" value="@Model.Request.Prompt" />
+                                        <input type="hidden" name="returnAgente" value="@res.AgenteAsignado" />
+                                        <button type="submit" class="btn btn-sm btn-outline-@badgeColor w-100 fw-semibold">
+                                            <i class="bi bi-plus-circle me-1"></i> @btnTexto
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Base de Conocimiento RAG Compacta -->
+<div class="card">
+    <div class="card-header bg-white py-3">
+        <h2 class="mb-0"><i class="bi bi-database-fill-gear text-info me-1"></i> Base de Conocimiento Institucional RAG (@Model.DocumentosRag.Count documentos)</h2>
+        <small class="text-muted">Reglamentos oficiales consultados automáticamente para validar cada evento.</small>
+    </div>
+    <div class="card-body p-4">
+        <p class="small text-muted mb-3">
+            <strong>Áreas normativas activas:</strong> @string.Join(" · ", Model.DocumentosRag.Select(d => d.Categoria).Distinct())
+        </p>
+
+        <details class="ep-details-box">
+            <summary class="ep-details-summary">
+                <span><i class="bi bi-book me-2 text-primary"></i>Ver los @Model.DocumentosRag.Count reglamentos institucionales o agregar uno nuevo</span>
+                <span class="small text-muted fw-normal">Desplegar</span>
+            </summary>
+            <div class="pt-3">
+                <div class="row g-3">
+                    @foreach (var doc in Model.DocumentosRag)
+                    {
+                        <div class="col-md-6">
+                            <div class="ep-tile">
+                                <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                                    <strong class="text-primary">@doc.Titulo</strong>
+                                    <span class="badge bg-secondary text-white">@doc.Categoria</span>
+                                </div>
+                                <p class="small mb-2">@doc.Contenido</p>
+                                <div class="small text-muted"><i class="bi bi-tags me-1"></i>@doc.PalabrasClave</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (puedeEscribir)
+                {
+                    <div class="border-top mt-4 pt-3">
+                        <div class="ep-subhead mb-2">Agregar Nueva Política o Reglamento</div>
+                        <form asp-action="AgregarDocumentoRag" method="post" class="row g-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="eventoId" value="@Model.Request.EventoId" />
+                            <div class="col-md-4">
+                                <input name="Titulo" class="form-control form-control-sm" placeholder="Título del reglamento o política" required />
+                            </div>
+                            <div class="col-md-3">
+                                <select name="Categoria" class="form-select form-select-sm">
+                                    <option value="Espacios y Salones">Espacios y Salones</option>
+                                    <option value="Política Financiera">Política Financiera</option>
+                                    <option value="Protocolo Comunicación">Protocolo Comunicación</option>
+                                    <option value="Seguridad y Logística">Seguridad y Logística</option>
+                                    <option value="Proveedores">Proveedores</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <input name="PalabrasClave" class="form-control form-control-sm" placeholder="Palabras clave separadas por coma" />
+                            </div>
+                            <div class="col-md-10">
+                                <input name="Contenido" class="form-control form-control-sm" placeholder="Texto de la regla o conocimiento que consultarán los agentes..." required />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-sm btn-primary w-100">
+                                    <i class="bi bi-plus-lg me-1"></i> Guardar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </details>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function lanzarRapido(agente, texto) {
+            document.getElementById('agenteForzadoInput').value = agente;
+            document.getElementById('promptInput').value = texto;
+            document.getElementById('orchestratorForm').submit();
+        }
+    </script>
+}
