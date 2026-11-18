@@ -1,7 +1,8 @@
 @model IEnumerable<EventPro.Models.RubroPresupuesto>
 @{
     ViewData["Title"] = "Control de Presupuesto";
-    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    bool esAdmin = User.IsInRole("Administrador");
+    bool puedeEditar = esAdmin || User.IsInRole("Planificador");
     decimal techo = ViewBag.TechoAutorizado ?? 0m;
     decimal real = ViewBag.TotalReal ?? 0m;
     double pct = ViewBag.PorcentajeTecho ?? 0;
@@ -159,7 +160,7 @@ else if (pct >= 80)
                     <th>Estimado</th>
                     <th>Real</th>
                     <th>Diferencia</th>
-                    @if (puedeEditar)
+                    @if (esAdmin)
                     {
                         <th class="text-end">Acciones</th>
                     }
@@ -177,7 +178,7 @@ else if (pct >= 80)
                         <td class="@(r.MontoEstimado - r.MontoReal < 0 ? "text-danger fw-bold" : "text-success")">
                             $@((r.MontoEstimado - r.MontoReal).ToString("N2"))
                         </td>
-                        @if (puedeEditar)
+                        @if (esAdmin)
                         {
                             <td class="text-end">
                                 <form asp-action="Delete" asp-route-id="@r.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar rubro?');">

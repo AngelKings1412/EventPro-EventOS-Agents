@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventPro.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Administrador,Planificador")]
 public class TareasController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -106,7 +106,7 @@ public class TareasController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Administrador,Planificador")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Delete(int id)
     {
         var tarea = await _context.Tareas.FindAsync(id);

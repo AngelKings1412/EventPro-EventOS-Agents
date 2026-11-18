@@ -1,6 +1,8 @@
 @model EventPro.Models.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Panel Principal";
+    bool esAdmin = User.IsInRole("Administrador");
+    bool puedeOperar = esAdmin || User.IsInRole("Planificador");
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
@@ -9,13 +11,19 @@
         <p class="text-muted mb-0">Resumen operativo de eventos, presupuesto y orquestación Multi-Agente IA.</p>
     </div>
     <div class="d-flex flex-wrap gap-2">
-        <a asp-controller="Agentes" asp-action="Index" class="btn btn-dark">
-            <i class="bi bi-cpu-fill me-1"></i> Consola Multi-Agente IA
-        </a>
-        @if (User.IsInRole("Administrador") || User.IsInRole("Planificador"))
+        @if (puedeOperar)
         {
+            <a asp-controller="Agentes" asp-action="Index" class="btn btn-dark">
+                <i class="bi bi-cpu-fill me-1"></i> Consola Multi-Agente IA
+            </a>
             <a asp-controller="Eventos" asp-action="Create" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i> Nuevo Evento
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Reportes" asp-action="Index" class="btn btn-outline-primary">
+                <i class="bi bi-bar-chart-line me-1"></i> Ver Reportes Ejecutivos
             </a>
         }
     </div>
@@ -113,9 +121,12 @@
                                     </span>
                                 </td>
                                 <td class="text-end pe-3 text-nowrap">
-                                    <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@ev.Id" class="btn btn-sm btn-dark" title="Orquestar IA">
-                                        <i class="bi bi-cpu"></i>
-                                    </a>
+                                    @if (puedeOperar)
+                                    {
+                                        <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@ev.Id" class="btn btn-sm btn-dark" title="Orquestar IA">
+                                            <i class="bi bi-cpu"></i>
+                                        </a>
+                                    }
                                     <a asp-controller="Eventos" asp-action="Details" asp-route-id="@ev.Id" class="btn btn-sm btn-outline-secondary" title="Ver detalles">
                                         <i class="bi bi-eye"></i>
                                     </a>
@@ -133,7 +144,10 @@
         <div class="card h-100">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h2 class="mb-0">Tareas Logísticas Prioritarias</h2>
-                <a asp-controller="Tareas" asp-action="Index" class="btn btn-outline-primary btn-sm">Cronograma</a>
+                @if (puedeOperar)
+                {
+                    <a asp-controller="Tareas" asp-action="Index" class="btn btn-outline-primary btn-sm">Cronograma</a>
+                }
             </div>
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
@@ -164,7 +178,10 @@
 <div class="card">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h2 class="mb-0"><i class="bi bi-cpu text-info me-2"></i>Últimas Ejecuciones del Orquestador Multi-Agente IA</h2>
-        <a asp-controller="Bitacora" asp-action="Index" asp-route-tipo="Agente" class="btn btn-outline-primary btn-sm">Ver Bitácora IA</a>
+        @if (esAdmin)
+        {
+            <a asp-controller="Bitacora" asp-action="Index" asp-route-tipo="Agente" class="btn btn-outline-primary btn-sm">Ver Bitácora IA</a>
+        }
     </div>
     <div class="table-responsive">
         <table class="table table-sm align-middle mb-0">

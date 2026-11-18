@@ -104,7 +104,7 @@ public class PresupuestosController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Administrador,Planificador")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Delete(int id)
     {
         var rubro = await _context.RubrosPresupuesto.FindAsync(id);

@@ -61,9 +61,12 @@
                         </td>
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
-                                <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@item.Id" class="btn btn-outline-dark" title="Orquestar con Agentes IA">
-                                    <i class="bi bi-cpu"></i> IA
-                                </a>
+                                @if (puedeEditar)
+                                {
+                                    <a asp-controller="Agentes" asp-action="Index" asp-route-eventoId="@item.Id" class="btn btn-outline-dark" title="Orquestar con Agentes IA">
+                                        <i class="bi bi-cpu"></i> IA
+                                    </a>
+                                }
                                 <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary" title="Detalles">
                                     <i class="bi bi-eye"></i>
                                 </a>

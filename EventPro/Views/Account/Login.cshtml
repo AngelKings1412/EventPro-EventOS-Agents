@@ -96,18 +96,30 @@
             </form>
 
             <div class="ep-credentials-box mt-4">
-                <div class="ep-subhead mb-2">Credenciales demostrativas (SQL Server)</div>
-                <div class="small mb-1">
-                    <strong>Admin:</strong> <code>admin@itesca.edu.mx</code> / <code>Admin123*</code>
-                </div>
-                <div class="small mb-1">
-                    <strong>Planificador:</strong> <code>organizador@itesca.edu.mx</code> / <code>Organiza123*</code>
-                </div>
-                <div class="small">
-                    <strong>Cliente:</strong> <code>cliente@itesca.edu.mx</code> / <code>Cliente123*</code>
+                <div class="ep-subhead mb-2">Acceso rápido por Rol (Demo RBAC)</div>
+                <div class="d-flex flex-column gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm text-start d-flex justify-content-between align-items-center" onclick="accesoRapido('admin@itesca.edu.mx', 'Admin123*')">
+                        <span><strong>Administrador</strong> · <code>admin@itesca.edu.mx</code></span>
+                        <span class="badge bg-primary text-white">12 módulos + Eliminar</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm text-start d-flex justify-content-between align-items-center" onclick="accesoRapido('organizador@itesca.edu.mx', 'Organiza123*')">
+                        <span><strong>Planificador</strong> · <code>organizador@itesca.edu.mx</code></span>
+                        <span class="badge bg-success text-white">10 módulos + IA</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm text-start d-flex justify-content-between align-items-center" onclick="accesoRapido('cliente@itesca.edu.mx', 'Cliente123*')">
+                        <span><strong>Cliente</strong> · <code>cliente@itesca.edu.mx</code></span>
+                        <span class="badge bg-secondary text-white">6 módulos consulta</span>
+                    </button>
                 </div>
             </div>
         </div>
     </main>
+    <script>
+        function accesoRapido(email, pass) {
+            document.getElementById('Email').value = email;
+            document.getElementById('Password').value = pass;
+            document.querySelector('form').submit();
+        }
+    </script>
 </body>
 </html>

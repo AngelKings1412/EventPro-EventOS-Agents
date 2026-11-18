@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventPro.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Administrador,Planificador")]
 public class AgentesController : Controller
 {
     private readonly ApplicationDbContext _context;

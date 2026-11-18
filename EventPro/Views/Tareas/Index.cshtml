@@ -1,7 +1,8 @@
 @model IEnumerable<EventPro.Models.Tarea>
 @{
     ViewData["Title"] = "Cronograma de Tareas";
-    bool puedeEditar = User.IsInRole("Administrador") || User.IsInRole("Planificador");
+    bool esAdmin = User.IsInRole("Administrador");
+    bool puedeEditar = esAdmin || User.IsInRole("Planificador");
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
@@ -93,7 +94,7 @@
                     <th>Fecha Límite</th>
                     <th>Prioridad</th>
                     <th>Estado</th>
-                    @if (puedeEditar)
+                    @if (esAdmin)
                     {
                         <th class="text-end">Acciones</th>
                     }
@@ -134,7 +135,7 @@
                                 <span class="badge bg-secondary text-white">@t.Estado</span>
                             }
                         </td>
-                        @if (puedeEditar)
+                        @if (esAdmin)
                         {
                             <td class="text-end">
                                 <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar tarea?');">

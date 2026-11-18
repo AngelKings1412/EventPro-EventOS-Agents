@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventPro.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Administrador,Planificador")]
 public class ProveedoresController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -82,7 +82,7 @@ public class ProveedoresController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Administrador,Planificador")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> DeleteContratacion(int id)
     {
         var ep = await _context.EventoProveedores.FindAsync(id);

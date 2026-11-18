@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventPro.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Administrador,Planificador")]
 public class ClientesController : Controller
 {
     private readonly ApplicationDbContext _context;

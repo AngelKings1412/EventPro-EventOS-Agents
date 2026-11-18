@@ -1,6 +1,12 @@
 @using System.Security.Claims
 @{
     var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    bool esAdmin = User.IsInRole("Administrador");
+    bool esPlanificador = User.IsInRole("Planificador");
+    bool puedeOperar = esAdmin || esPlanificador;
+    string rolActual = User.FindFirstValue(ClaimTypes.Role) ?? "Usuario";
+    string rolBadgeClass = esAdmin ? "bg-primary text-white" : esPlanificador ? "bg-success text-white" : "bg-secondary text-white";
+    string rolDescripcion = esAdmin ? "Administrador · Control Total" : esPlanificador ? "Planificador · Gestión e IA" : "Cliente · Solo Consulta";
 }
 <!DOCTYPE html>
 <html lang="es">
@@ -16,7 +22,7 @@
     @if (User.Identity?.IsAuthenticated == true)
     {
         <div class="ep-shell">
-            <!-- Sidebar Lateral Responsivo -->
+            <!-- Sidebar Lateral Responsivo con Menú Filtrado por Rol RBAC -->
             <aside class="offcanvas-lg offcanvas-start ep-sidebar" tabindex="-1" id="epSidebar" aria-label="Menú principal">
                 <a class="ep-sidebar-brand" asp-controller="Dashboard" asp-action="Index">
                     <span class="fw-bold d-flex align-items-center gap-2">
@@ -27,23 +33,15 @@
                 </a>
 
                 <nav class="ep-sidebar-nav">
+                    <div class="ep-nav-section">Consulta y Seguimiento</div>
                     <a class="ep-sidebar-link @(ctrl == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
                         <i class="bi bi-speedometer2"></i><span>Dashboard</span>
                     </a>
-                    <a class="ep-sidebar-link @(ctrl == "Agentes" ? "active" : "")" asp-controller="Agentes" asp-action="Index">
-                        <i class="bi bi-cpu-fill"></i><span>Agentes IA</span>
-                    </a>
-
-                    <div class="ep-nav-divider" role="separator"></div>
-
                     <a class="ep-sidebar-link @(ctrl == "Eventos" ? "active" : "")" asp-controller="Eventos" asp-action="Index">
                         <i class="bi bi-calendar3"></i><span>Eventos</span>
                     </a>
                     <a class="ep-sidebar-link @(ctrl == "Presupuestos" ? "active" : "")" asp-controller="Presupuestos" asp-action="Index">
                         <i class="bi bi-cash-stack"></i><span>Presupuesto</span>
-                    </a>
-                    <a class="ep-sidebar-link @(ctrl == "Tareas" ? "active" : "")" asp-controller="Tareas" asp-action="Index">
-                        <i class="bi bi-check2-square"></i><span>Tareas</span>
                     </a>
                     <a class="ep-sidebar-link @(ctrl == "Invitados" ? "active" : "")" asp-controller="Invitados" asp-action="Index">
                         <i class="bi bi-people"></i><span>Invitados</span>
@@ -51,23 +49,35 @@
                     <a class="ep-sidebar-link @(ctrl == "Comunicados" ? "active" : "")" asp-controller="Comunicados" asp-action="Index">
                         <i class="bi bi-envelope-paper"></i><span>Comunicados</span>
                     </a>
-
-                    <div class="ep-nav-divider" role="separator"></div>
-
-                    <a class="ep-sidebar-link @(ctrl == "Proveedores" ? "active" : "")" asp-controller="Proveedores" asp-action="Index">
-                        <i class="bi bi-truck"></i><span>Proveedores</span>
-                    </a>
-                    <a class="ep-sidebar-link @(ctrl == "Clientes" ? "active" : "")" asp-controller="Clientes" asp-action="Index">
-                        <i class="bi bi-building"></i><span>Clientes</span>
-                    </a>
                     <a class="ep-sidebar-link @(ctrl == "Reportes" ? "active" : "")" asp-controller="Reportes" asp-action="Index">
                         <i class="bi bi-bar-chart-line"></i><span>Reportes</span>
                     </a>
-                    <a class="ep-sidebar-link @(ctrl == "Bitacora" ? "active" : "")" asp-controller="Bitacora" asp-action="Index">
-                        <i class="bi bi-journal-text"></i><span>Bitácora</span>
-                    </a>
-                    @if (User.IsInRole("Administrador"))
+
+                    @if (puedeOperar)
                     {
+                        <div class="ep-nav-divider" role="separator"></div>
+                        <div class="ep-nav-section">Operación e IA</div>
+                        <a class="ep-sidebar-link @(ctrl == "Agentes" ? "active" : "")" asp-controller="Agentes" asp-action="Index">
+                            <i class="bi bi-cpu-fill"></i><span>Agentes IA</span>
+                        </a>
+                        <a class="ep-sidebar-link @(ctrl == "Tareas" ? "active" : "")" asp-controller="Tareas" asp-action="Index">
+                            <i class="bi bi-check2-square"></i><span>Tareas</span>
+                        </a>
+                        <a class="ep-sidebar-link @(ctrl == "Proveedores" ? "active" : "")" asp-controller="Proveedores" asp-action="Index">
+                            <i class="bi bi-truck"></i><span>Proveedores</span>
+                        </a>
+                        <a class="ep-sidebar-link @(ctrl == "Clientes" ? "active" : "")" asp-controller="Clientes" asp-action="Index">
+                            <i class="bi bi-building"></i><span>Clientes</span>
+                        </a>
+                    }
+
+                    @if (esAdmin)
+                    {
+                        <div class="ep-nav-divider" role="separator"></div>
+                        <div class="ep-nav-section">Administración</div>
+                        <a class="ep-sidebar-link @(ctrl == "Bitacora" ? "active" : "")" asp-controller="Bitacora" asp-action="Index">
+                            <i class="bi bi-journal-text"></i><span>Bitácora</span>
+                        </a>
                         <a class="ep-sidebar-link @(ctrl == "Usuarios" ? "active" : "")" asp-controller="Usuarios" asp-action="Index">
                             <i class="bi bi-shield-lock"></i><span>Usuarios</span>
                         </a>
@@ -88,7 +98,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-person-circle text-muted d-none d-sm-inline"></i>
                         <span class="ep-user-name" title="@User.Identity.Name">@User.Identity.Name</span>
-                        <span class="badge bg-primary text-white">@User.FindFirstValue(ClaimTypes.Role)</span>
+                        <span class="badge @rolBadgeClass" title="Rol activo: @rolActual">@rolDescripcion</span>
                         <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-outline-secondary btn-sm">

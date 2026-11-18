@@ -258,12 +258,15 @@
                                     <i class="bi bi-arrow-repeat me-1"></i> Reenviar Ahora
                                 </button>
                             </form>
-                            <form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este comunicado del historial?');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                            @if (User.IsInRole("Administrador"))
+                            {
+                                <form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este comunicado del historial?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            }
                         </div>
                     }
                 </div>

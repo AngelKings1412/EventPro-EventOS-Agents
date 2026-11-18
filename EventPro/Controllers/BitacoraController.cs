@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventPro.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Administrador")]
 public class BitacoraController : Controller
 {
     private readonly ApplicationDbContext _context;

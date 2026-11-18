@@ -211,7 +211,7 @@ public class ComunicadosController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Administrador,Planificador")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Delete(int id)
     {
         var c = await _context.Comunicados.FindAsync(id);

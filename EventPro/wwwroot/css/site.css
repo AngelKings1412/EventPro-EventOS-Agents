@@ -254,6 +254,16 @@ code {
   margin: 0.5rem 0.25rem;
 }
 
+.ep-nav-section {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  padding: 0.35rem 0.85rem 0.2rem 0.85rem;
+  line-height: 1.35;
+}
+
 .ep-main {
   flex-grow: 1;
   min-width: 0;

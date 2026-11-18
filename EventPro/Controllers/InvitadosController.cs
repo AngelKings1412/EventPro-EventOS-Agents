@@ -152,7 +152,7 @@ public class InvitadosController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Administrador,Planificador")]
+    [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Delete(int id)
     {
         var inv = await _context.Invitados.FindAsync(id);

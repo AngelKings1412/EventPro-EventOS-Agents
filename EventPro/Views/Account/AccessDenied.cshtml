@@ -16,9 +16,18 @@
                 <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">
                     <i class="bi bi-house-door me-1"></i> Ir al Dashboard
                 </a>
-                <a asp-controller="Agentes" asp-action="Index" class="btn btn-outline-secondary">
-                    <i class="bi bi-cpu me-1"></i> Consola IA
-                </a>
+                @if (User.IsInRole("Administrador") || User.IsInRole("Planificador"))
+                {
+                    <a asp-controller="Agentes" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-cpu me-1"></i> Consola IA
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Eventos" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-calendar3 me-1"></i> Ver Eventos
+                    </a>
+                }
             </div>
         </div>
     </div>

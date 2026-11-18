@@ -142,7 +142,7 @@
                     <th>Servicio</th>
                     <th>Costo Pactado</th>
                     <th>Fecha</th>
-                    @if (puedeEditar)
+                    @if (User.IsInRole("Administrador"))
                     {
                         <th class="text-end">Quitar</th>
                     }
@@ -157,7 +157,7 @@
                         <td><small>@ep.Proveedor?.Servicio</small></td>
                         <td class="fw-bold text-success">$@ep.Costo.ToString("N2") MXN</td>
                         <td>@ep.FechaContratacion.ToString("dd/MM/yyyy")</td>
-                        @if (puedeEditar)
+                        @if (User.IsInRole("Administrador"))
                         {
                             <td class="text-end">
                                 <form asp-action="DeleteContratacion" asp-route-id="@ep.Id" method="post" class="d-inline">
